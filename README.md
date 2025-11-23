@@ -294,7 +294,7 @@ Contributions make the open-source community amazing! Any contributions are **gr
 Have questions? Reach out to us!
 
 - 📧 Email: [Asemahlezide22@gmail.com]
-- 🔗 GitHub: [@GibbyEns](https://github.com/Asemahlezide22)
+- 🔗 GitHub: [@Asemahlezide](https://github.com/Asemahlezide22)
 
 ---
 
