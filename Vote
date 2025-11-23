@@ -1,0 +1,167 @@
+from flask import Flask, render_template_string, request, redirect
+
+app = Flask(__name__)
+
+# Dummy DB
+elections = [
+    {"id": 1, "title": "2025 Presidential Election"},
+    {"id": 2, "title": "Class Representative Election"},
+]
+
+candidates = {
+    1: [
+        {"id": 1, "name": "Alice Johnson"},
+        {"id": 2, "name": "Michael Smith"},
+    ],
+    2: [
+        {"id": 3, "name": "John Peter"},
+        {"id": 4, "name": "Sarah Lee"},
+    ],
+}
+
+votes = {}
+
+# -------------------------------------------------------------------
+# HTML BASE TEMPLATE (accessibility features included)
+# -------------------------------------------------------------------
+base = """
+<!DOCTYPE html>
+<html>
+<head>
+<title>Accessible Voting System</title>
+
+<style>
+body { font-size: var(--size, 18px); }
+.large-btn { padding: 20px; width: 100%; font-size: 22px; margin: 10px 0; }
+.high-contrast { background: black; color: yellow; }
+</style>
+
+<script>
+function big() {
+    let s = parseInt(getComputedStyle(document.body).getPropertyValue('--size') || 18);
+    document.body.style.setProperty('--size', (s + 2) + "px");
+}
+function small() {
+    let s = parseInt(getComputedStyle(document.body).getPropertyValue('--size') || 18);
+    document.body.style.setProperty('--size', (s - 2) + "px");
+}
+function contrast() {
+    document.body.classList.toggle("high-contrast");
+}
+</script>
+
+</head>
+<body>
+
+<button onclick="big()">A+</button>
+<button onclick="small()">A-</button>
+<button onclick="contrast()">High Contrast</button>
+
+<hr>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>
+"""
+
+# -------------------------------------------------------------------
+# HOME PAGE
+# -------------------------------------------------------------------
+@app.route("/")
+def home():
+    page = """
+    {% extends base %}
+    {% block content %}
+    <h1>Welcome to the Accessible Voting System</h1>
+    <a href="/elections"><button class="large-btn">View Elections</button></a>
+    {% endblock %}
+    """
+    return render_template_string(page, base=base)
+
+# -------------------------------------------------------------------
+# ELECTION LIST PAGE
+# -------------------------------------------------------------------
+@app.route("/elections")
+def election_list():
+    page = """
+    {% extends base %}
+    {% block content %}
+    <h1>Select an Election</h1>
+
+    {% for e in elections %}
+    <a href="/elections/{{ e.id }}"><button class="large-btn">{{ e.title }}</button></a>
+    {% endfor %}
+
+    {% endblock %}
+    """
+    return render_template_string(page, base=base, elections=elections)
+
+# -------------------------------------------------------------------
+# CANDIDATE LIST PAGE
+# -------------------------------------------------------------------
+@app.route("/elections/<int:election_id>")
+def candidate_list(election_id):
+    page = """
+    {% extends base %}
+    {% block content %}
+    <h1>Candidates</h1>
+
+    {% for c in candidates %}
+    <a href="/vote/{{ c.id }}"><button class="large-btn">Vote for {{ c.name }}</button></a>
+    {% endfor %}
+
+    {% endblock %}
+    """
+    return render_template_string(page, base=base, candidates=candidates[election_id])
+
+# -------------------------------------------------------------------
+# CONFIRM VOTE
+# -------------------------------------------------------------------
+@app.route("/vote/<int:candidate_id>", methods=["GET", "POST"])
+def vote(candidate_id):
+    if request.method == "POST":
+        votes[candidate_id] = votes.get(candidate_id, 0) + 1
+        return redirect("/success")
+
+    # find candidate
+    selected = None
+    for group in candidates.values():
+        for c in group:
+            if c["id"] == candidate_id:
+                selected = c
+
+    page = """
+    {% extends base %}
+    {% block content %}
+    <h2>Confirm your vote</h2>
+    <p>You selected: <strong>{{ c.name }}</strong></p>
+
+    <form method="POST">
+        <button class="large-btn">Confirm Vote</button>
+    </form>
+
+    {% endblock %}
+    """
+    return render_template_string(page, base=base, c=selected)
+
+# -------------------------------------------------------------------
+# SUCCESS PAGE
+# -------------------------------------------------------------------
+@app.route("/success")
+def success():
+    page = """
+    {% extends base %}
+    {% block content %}
+    <h1>✔ Your vote was successfully submitted!</h1>
+    <a href="/"><button class="large-btn">Back to Home</button></a>
+    {% endblock %}
+    """
+    return render_template_string(page, base=base)
+
+
+# -------------------------------------------------------------------
+# RUN APP
+# -------------------------------------------------------------------
+if __name__ == "__main__":
+    app.run(debug=True)
